@@ -3,7 +3,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const { uploadFileMetadata, getFileMetadataById, deleteFileMetadataById, updateFileMetadataById } = require('./mongodb');
+const { uploadFileMetadata, getFileMetadataById, deleteFileMetadataById, updateFileMetadataById, getAllFiles } = require('./mongodb');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -90,9 +90,10 @@ router.delete('/:fileId', async (req, res) => {
     const { fileId } = req.params;
 
     try {
+        const file = await getFileMetadataById(fileId);
         await deleteFileMetadataById(fileId);
 
-        const filePath = path.join(__dirname, '../uploads', fileId + '.txt'); 
+        const filePath = path.join(__dirname, './uploads', fileId + file.fileType);
         fs.unlinkSync(filePath);
 
         res.json({ message: 'File deleted successfully' });
