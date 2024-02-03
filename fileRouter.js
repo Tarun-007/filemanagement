@@ -18,11 +18,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         size: file.size,
         fileType: path.extname(file.originalname)
     };
-
+    const filePath = path.join(__dirname, './uploads', fileId + path.extname(file.originalname));
     try {
         await uploadFileMetadata(metadata);
 
-        const filePath = path.join(__dirname, './uploads', fileId + path.extname(file.originalname));
         await fs.writeFile(filePath, file.buffer, (err) => {
             if (err) {
                 console.error('Error writing file:', err);
@@ -30,7 +29,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
                 console.log('File successfully written to disk:', filePath);
             }
         });
-        res.json({ fileId });
+        res.json({ filepath: filePath, fileId });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
@@ -47,7 +46,8 @@ router.get('/:fileId', async (req, res) => {
             return res.status(404).json({ error: 'File not found' });
         }
 
-        const filePath = path.join(__dirname, '../uploads', fileId + file.fileType);
+        const filePath = path.join(__dirname, './uploads', fileId + file.fileType);
+        console.log(filePath)
         const fileStream = fs.createReadStream(filePath);
         fileStream.pipe(res);
     } catch (error) {
@@ -56,14 +56,30 @@ router.get('/:fileId', async (req, res) => {
     }
 });
 
-router.put('/:fileId', async (req, res) => {
+router.put('/:fileId', upload.single('file'), async (req, res) => {
     const { fileId } = req.params;
-    const newMetadata = req.body;
+    const { file } = req;
+    console.log(file)
+    const metadata = {
+        fileId,
+        fileName: file.originalname,
+        createdAt: new Date(),
+        size: file.size,
+        fileType: path.extname(file.originalname)
+    };
 
+    const filePath = path.join(__dirname, './uploads', fileId + path.extname(file.originalname));
     try {
-        await updateFileMetadataById(fileId, newMetadata);
+        await updateFileMetadataById(fileId, metadata);
 
-        res.json({ message: 'File metadata updated successfully' });
+        await fs.writeFile(filePath, file.buffer, (err) => {
+            if (err) {
+                console.error('Error writing file:', err);
+            } else {
+                console.log('File successfully written to disk:', filePath);
+            }
+        });
+        res.json({ filepath: filePath, fileId });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
@@ -76,7 +92,7 @@ router.delete('/:fileId', async (req, res) => {
     try {
         await deleteFileMetadataById(fileId);
 
-        const filePath = path.join(__dirname, '../uploads', fileId + '.txt'); // Example path
+        const filePath = path.join(__dirname, '../uploads', fileId + '.txt'); 
         fs.unlinkSync(filePath);
 
         res.json({ message: 'File deleted successfully' });

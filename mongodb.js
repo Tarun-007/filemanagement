@@ -6,7 +6,7 @@ const fileSchema = new mongoose.Schema({
     createdAt: Date,
     size: Number,
     fileType: String
-});
+},{ timestamps: true });
 
 const File = mongoose.model('files', fileSchema);
 
@@ -32,17 +32,14 @@ async function deleteFileMetadataById(fileId) {
     try {
         return await File.deleteOne({ fileId });
     } catch (error) {
-        // Throw error if deletion fails
         throw new Error('Error deleting file metadata');
     }
 }
 
-// Function to update file metadata by fileId in MongoDB
 async function updateFileMetadataById(fileId, newMetadata) {
     try {
         return await File.updateOne({ fileId }, newMetadata);
     } catch (error) {
-        // Throw error if update fails
         throw new Error('Error updating file metadata');
     }
 }
